@@ -7,10 +7,10 @@ import type * as ioredis from 'ioredis'
  * ioredis-like Redis client
  */
 export type RedisClient = Pick<
-  ioredis.Redis,
+  ioredis.Redis | ioredis.Cluster,
   'eval' | 'evalsha' | 'get' | 'set' | 'zrem'
 > &
-  Partial<Pick<ioredis.Redis, 'options'>>
+  Partial<Pick<ioredis.Redis | ioredis.Cluster, 'options'>>
 
 export interface LockLostCallback {
   (this: Lock, err: LostLockError): void

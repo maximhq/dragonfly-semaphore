@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 
 import { acquireLua } from '../../../../src/semaphore/acquire/lua'
-import { client1 as client } from '../../../redisClient'
+import { client1 as client, clusterClient } from '../../../redisClient'
 
 interface Options {
   identifier: string
@@ -61,5 +61,48 @@ describe('semaphore acquire internal', () => {
       // https://redislabs.com/ebook/part-2-core-concepts/chapter-6-application-components-in-redis/6-3-counting-semaphores/6-3-1-building-a-basic-counting-semaphore/
       // also has the same problem
     })
+  })
+})
+
+describe('CLUSTER configuration', () => {
+  it('should handle acquiring lock when keys hash to different slots', async () => {
+    // In Redis Cluster, keys that hash to different slots must be handled properly
+    const result1 = await acquireLua(clusterClient, [
+      '{lock}key1',
+      1,
+      'id1',
+      500,
+      Date.now()
+    ])
+    const result2 = await acquireLua(clusterClient, [
+      '{lock}key2',
+      1,
+      'id2',
+      500,
+      Date.now()
+    ])
+    expect(result1).to.be.eql(1)
+    expect(result2).to.be.eql(1)
+  })
+
+  it('should handle concurrent locks on the same key', async () => {
+    // Test atomicity using the exact same key
+    const key = '{lock}sameKey'
+    const result1 = await acquireLua(clusterClient, [
+      key,
+      1,
+      'id1',
+      500,
+      Date.now()
+    ])
+    const result2 = await acquireLua(clusterClient, [
+      key,
+      1,
+      'id2',
+      500,
+      Date.now()
+    ])
+    expect(result1).to.be.eql(1)
+    expect(result2).to.be.eql(0)
   })
 })

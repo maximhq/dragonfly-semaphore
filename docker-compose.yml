@@ -29,3 +29,68 @@ services:
     image: redis:alpine
     ports:
       - 6003:6379
+
+  redis-master-1:
+    image: redis:alpine
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000
+    ports:
+      - "6004:6379"
+    networks:
+      - redis-cluster
+
+  redis-master-2:
+    image: redis:alpine
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000
+    ports:
+      - "6005:6379"
+    networks:
+      - redis-cluster
+
+  redis-master-3:
+    image: redis:alpine
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000
+    ports:
+      - "6006:6379"
+    networks:
+      - redis-cluster
+
+  redis-replica-1:
+    image: redis:alpine
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000
+    ports:
+      - "6007:6379"
+    networks:
+      - redis-cluster
+
+  redis-replica-2:
+    image: redis:alpine
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000
+    ports:
+      - "6008:6379"
+    networks:
+      - redis-cluster
+
+  redis-replica-3:
+    image: redis:alpine
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000
+    ports:
+      - "6009:6379"
+    networks:
+      - redis-cluster
+
+  redis-cluster-init:
+    image: redis:alpine
+    command: redis-cli --cluster create redis-master-1:6379 redis-master-2:6379 redis-master-3:6379 redis-replica-1:6379 redis-replica-2:6379 redis-replica-3:6379 --cluster-yes --cluster-replicas 1
+    depends_on:
+      - redis-master-1
+      - redis-master-2
+      - redis-master-3
+      - redis-replica-1
+      - redis-replica-2
+      - redis-replica-3
+    networks:
+      - redis-cluster
+
+networks:
+  redis-cluster:
+    driver: bridge

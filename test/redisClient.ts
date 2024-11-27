@@ -42,9 +42,46 @@ function createClientMock(num: number) {
   })
 }
 
+function createClusterClient() {
+  console.log('Initializing cluster client...')
+
+  const nodes = [
+    { host: '127.0.0.1', port: 6004 },
+    { host: '127.0.0.1', port: 6005 },
+    { host: '127.0.0.1', port: 6006 }
+  ]
+
+  const client = new Redis.Cluster(nodes, {
+    redisOptions: {
+      offlineQueue: false,
+      autoResendUnfulfilledCommands: false,
+      maxRetriesPerRequest: 3,
+      connectTimeout: 10000,
+      lazyConnect: true // Add this to prevent automatic connection
+    },
+    clusterRetryStrategy(times) {
+      if (times > 3) return null
+      return 1000
+    },
+    enableReadyCheck: true,
+    scaleReads: 'master',
+    natMap: {
+      '172.21.0.5:6379': { host: '127.0.0.1', port: 6004 },
+      '172.21.0.4:6379': { host: '127.0.0.1', port: 6005 },
+      '172.21.0.7:6379': { host: '127.0.0.1', port: 6006 },
+      '172.21.0.3:6379': { host: '127.0.0.1', port: 6007 },
+      '172.21.0.6:6379': { host: '127.0.0.1', port: 6008 }
+    }
+  })
+
+  return client
+}
+
 export const client1 = createClient(1)
 export const client2 = createClient(2)
 export const client3 = createClient(3)
+
+export const clusterClient = createClusterClient()
 
 export const allClients = [client1, client2, client3]
 
